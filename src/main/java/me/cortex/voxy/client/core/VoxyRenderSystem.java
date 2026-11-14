@@ -73,6 +73,7 @@ public class VoxyRenderSystem {
     private final ViewportSelector<?> viewportSelector;
 
     private final AbstractRenderPipeline pipeline;
+    private final RenderProperties properties;
 
     // Fog parameters captured before modification by MixinFogRenderer, for Voxy's own fog pass
     private float capturedFogStart;
@@ -121,8 +122,8 @@ public class VoxyRenderSystem {
 
             this.worldIn = world;
 
+            this.properties = RenderProperties.getRenderProperties();
             var backendFactory = getRenderBackendFactory();
-
             {
                 this.modelService = new ModelBakerySubsystem(world.getMapper());
                 this.renderGen = new RenderGenerationService(world, this.modelService, sm, IUsesMeshlets.class.isAssignableFrom(backendFactory.clz()));
@@ -141,7 +142,7 @@ public class VoxyRenderSystem {
                 this.nodeManager.start();
             }
 
-            this.pipeline = RenderPipelineFactory.createPipeline(this.nodeManager, this.nodeCleaner, this.traversal, this::frexStillHasWork);
+            this.pipeline = RenderPipelineFactory.createPipeline(this.properties, this.nodeManager, this.nodeCleaner, this.traversal, this::frexStillHasWork);
             this.pipeline.setupExtraModelBakeryData(this.modelService);//Configure the model service
 
             //Late stage traversal compile for shaders with taa
@@ -205,7 +206,7 @@ public class VoxyRenderSystem {
         }
 
         //cameraY += 100;
-        var voxyProjection = computeProjectionMat(matrices.projection());
+        var voxyProjection = computeProjectionMat(this.properties, matrices.projection());
 
         int[] dims = new int[4];
         glGetIntegerv(GL_VIEWPORT, dims);
@@ -219,6 +220,10 @@ public class VoxyRenderSystem {
                 width = (int) (width*factor[0]);
                 height = (int) (height*factor[1]);
             }
+        }
+        if (width == 0 || height == 0) {
+            Logger.error("Viewport width or height was zero, this is bad bad bad");
+            return null;
         }
 
         viewport
@@ -241,6 +246,7 @@ public class VoxyRenderSystem {
             return;
         }
         if (viewport.width <= 0 || viewport.height <= 0) {
+            Logger.error("Viewport width or height was zero, this is bad bad bad, exiting frame");
             return;//Only render on valid viewport
         }
 
@@ -279,7 +285,7 @@ public class VoxyRenderSystem {
         if ((!VoxyClient.disableSodiumChunkRender())&&!IrisUtil.irisShadowActive()) {
             this.chunkBoundRenderer.render(viewport);
         } else {
-            viewport.depthBoundingBuffer.clear(0);
+            viewport.depthBoundingBuffer.clear(this.properties.inverseClearDepth());
         }
         TimingStatistics.E.stop();
 
@@ -427,18 +433,42 @@ public class VoxyRenderSystem {
         ).mulLocal(makeProjectionMatrix(nearVoxy, 16*3000));
     }*/
 
-    private static Matrix4f computeProjectionMat(Matrix4fc base) {
+    private static double getGameFoV() {
+        var client = Minecraft.getInstance();
+        var gameRenderer = client.gameRenderer;
+        return gameRenderer.getFov(gameRenderer.getMainCamera(), client.getTimer().getGameTimeDeltaPartialTick(true), true);
+    }
 
-        var proj = new Matrix4f(base);
+    private static Matrix4f computeProjectionMat(RenderProperties properties, Matrix4fc base) {
+
+        //this jank is to capture the extra crap they inject like viewbobbing
+        var rawMCProj = Minecraft.getInstance().gameRenderer.getProjectionMatrix(getGameFoV());
+        var extraProjection = rawMCProj.invert(new Matrix4f()).mul(base);
 
         float near = getRenderDistance()<=32.0f?8f:16f;
         near = VoxyClient.disableSodiumChunkRender()?0.1f:near;
 
         float far = 16*3000;
 
-        return proj
-                .m22((far + near) / (near - far))
-                .m32((far+far) * near / (near - far));
+        /* jank way of just modifying the base raw
+        if (true) {
+            return new Matrix4f(base)
+                    .m22((far + near) / (near - far))
+                    .m32((far+far) * near / (near - far));
+        }*/
+
+        //Flip near and far on reverse depth
+        if (properties.isReverseZ()) {
+            float tmp = near;
+            near = far;
+            far = tmp;
+        }
+
+        return extraProjection.mulLocal(
+                new Matrix4f(rawMCProj)
+                .m22((properties.isZero2One()?far:(far+near)) / (near - far))
+                .m32((properties.isZero2One()?far:(far+far)) * near / (near - far))
+        );
     }
 
     private boolean frexStillHasWork() {
