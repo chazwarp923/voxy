@@ -42,7 +42,7 @@ merged in, moved onto **Sodium 0.8.13** for 1.21.1. Notable changes over the ear
 Requires JDK 21.
 
 ```bash
-git clone -b mc_1211 https://github.com/chazwarp923/voxy
+git clone https://github.com/chazwarp923/voxy
 cd voxy
 ./gradlew build
 # Output: build/libs/voxy-*.jar
