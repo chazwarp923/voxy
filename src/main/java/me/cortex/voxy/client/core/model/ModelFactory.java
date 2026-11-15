@@ -385,6 +385,12 @@ public class ModelFactory {
         boolean isBiomeColourDependent = false;
         if (colourProvider != null) {
             isBiomeColourDependent = isBiomeDependentColour(colourProvider, blockState);
+            //A constant tint of -1 means "no tint", but the shader turns a tint of -1 into 0, so tinted faces would
+            // render pure black (e.g. dynamic trees leaves whose provider defers to an untinted primitive leaf).
+            // Treat such blocks as having no colour provider.
+            if (!isBiomeColourDependent && (captureColourConstant(colourProvider, blockState, DEFAULT_BIOME)|0xFF000000) == -1) {
+                colourProvider = null;
+            }
         }
 
         ModelEntry entry;
