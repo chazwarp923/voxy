@@ -20,6 +20,9 @@ import static org.lwjgl.opengl.GL45.glBindTextureUnit;
 
 public class ModelStore {
     public static final int MODEL_SIZE = 64;
+    //Entries in the biome colour table (biome dependent models * biomes), upstream uses 1<<16 which large modpacks
+    // (hundreds of biomes and tinted blocks) overflow, making out of range lookups render black
+    public static final int MODEL_COLOUR_CAPACITY = 1<<22;
     final GlBuffer modelBuffer;
     final GlBuffer modelColourBuffer;
     final GlTexture textures;
@@ -27,7 +30,7 @@ public class ModelStore {
 
     public ModelStore() {
         this.modelBuffer = new GlBuffer(MODEL_SIZE * (1<<16)).name("ModelData");
-        this.modelColourBuffer = new GlBuffer(4 * (1<<16)).name("ModelColour");
+        this.modelColourBuffer = new GlBuffer(4L * MODEL_COLOUR_CAPACITY).name("ModelColour");
         this.textures = RenderResourceReuse.getOrCreateModelStoreTextureAtlas();
 
         //Limit the mips of the texture to match that of the terrain atlas
