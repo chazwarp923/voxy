@@ -1,80 +1,63 @@
-# Voxy — Minecraft 1.21.1 Port
+# Voxy — unofficial Minecraft 1.21.1 port
 
-**Voxy** is a far-distance LoD (Level of Detail) rendering mod for Minecraft that dramatically extends your view distance without the normal performance cost.
+> **Unofficial.** This is a community port of [Voxy](https://github.com/MCRcortex/voxy) by
+> [MCRcortex](https://github.com/MCRcortex) to Minecraft **1.21.1** (Fabric). It is not affiliated with or
+> supported by MCRcortex. Please don't report issues from this port upstream.
+>
+> Voxy is **All Rights Reserved** by MCRcortex (see [LICENSE.md](LICENSE.md)). This fork exists on GitHub
+> under GitHub's forking terms; no builds are distributed from it.
 
-This repository is a **1.21.1 backport** — the original creator ([MCRcortex](https://github.com/MCRcortex/voxy)) skipped 1.21.1 through 1.21.4 and only maintains newer versions. This port fills that gap.
+**Voxy** is a far-distance LoD (Level of Detail) renderer for Minecraft that extends view distance far beyond
+vanilla render distance at a low performance cost.
 
----
-
-## Sources / Credits
+## Credits
 
 | Role | Repository |
 |---|---|
-| **Original mod** | [MCRcortex/voxy](https://github.com/MCRcortex/voxy) |
-| **1.21.1 fork (base for this port)** | [m3t4f1v3/voxy @ mc_1211](https://github.com/m3t4f1v3/voxy/tree/mc_1211) |
-| **This port** | [thijsi123/voxy](https://github.com/thijsi123/voxy) |
+| Original mod | [MCRcortex/voxy](https://github.com/MCRcortex/voxy) |
+| Earlier 1.21.1 work | [m3t4f1v3/voxy @ mc_1211](https://github.com/m3t4f1v3/voxy/tree/mc_1211) |
+| 1.21.1 backport this builds on | [thijsi123/voxy @ mc_1211](https://github.com/thijsi123/voxy/tree/mc_1211) |
 
-## What happened / how this was made
+## What this port is
 
-MCRcortex's `dev` branch had moved past Minecraft 1.21.1 to newer versions (`1.21.11`, `26.x`), leaving no working build for 1.21.1. Their `12111` branch targets a different version string (`1.21.11`) rather than the actual `1.21.1` release.
+The `mc_1211` branch is the thijsi123 1.21.1 backport with upstream's `12111` branch (Voxy **0.2.16-beta**)
+merged in, moved onto **Sodium 0.8.13** for 1.21.1. Notable changes over the earlier backport:
 
-[m3t4f1v3](https://github.com/m3t4f1v3/voxy) had a proper `mc_1211` branch targeting real `minecraft_version=1.21.1` with community-merged fixes (fog rendering, config screen, etc.), but it was buried and not released as a build.
-
-This repo was created with the help of **[Claude Code](https://claude.ai/code)** (Anthropic's AI coding assistant) which:
-1. Cloned and analyzed both upstream repos (`MCRcortex/voxy` and `m3t4f1v3/voxy`)
-2. Identified that `m3t4f1v3`'s `mc_1211` branch was the correct working 1.21.1 base (while MCRcortex's `12111` branch targets a different MC version entirely)
-3. Created this clean working copy, configured it with portable Java (JDK 21), and verified it builds successfully
-4. Published this repo and release
-
-The mod compiled successfully on the first build attempt — no code changes were needed beyond confirming the right branch to use.
-
----
+- Upstream rendering changes: new SSAO modes and auto-detection, depth handling rework, lightmap fix,
+  view-bobbing-aware projection, and model-baking blending/seam fixes
+- Sodium 0.8 config API menu (in Sodium's video settings), including the backport's fog and cloud options
+- Iris 1.8.14 support (tested with Complementary Reimagined r5.9.3, which ships Voxy support)
+- Nvidium is not supported: no Nvidium build for 1.21.1 works with Sodium 0.8
 
 ## Requirements
 
-- **Minecraft**: 1.21.1 (Java Edition)
-- **Mod Loader**: [Fabric](https://fabricmc.net/)
-- **Required mods**:
-  - [Fabric API](https://modrinth.com/mod/fabric-api) `0.116.6+1.21.1`
-  - [Sodium](https://modrinth.com/mod/sodium) `mc1.21.1-0.6.13` (required)
-  - [Lithium](https://modrinth.com/mod/lithium) `mc1.21.1-0.15.0` (required)
-- **Java**: 21
-
----
-
-## Installation
-
-1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft 1.21.1
-2. Download the JAR from the [Releases](../../releases) page
-3. Place it in your `.minecraft/mods/` folder alongside Fabric API, Sodium, and Lithium
-4. Launch Minecraft 1.21.1 with the Fabric profile
-
----
+- Minecraft **1.21.1** (Java Edition), [Fabric Loader](https://fabricmc.net/) **0.20.1+**
+- [Fabric API](https://modrinth.com/mod/fabric-api) `0.116.6+1.21.1`
+- [Sodium](https://modrinth.com/mod/sodium) `mc1.21.1-0.8.13`
+- Optional: [Iris](https://modrinth.com/mod/iris) `1.8.14-beta.1+1.21.1` with a shader pack that supports Voxy
+- Java **21**
 
 ## Building from source
 
 Requires JDK 21.
 
 ```bash
-git clone https://github.com/thijsi123/voxy
+git clone -b mc_1211 https://github.com/chazwarp923/voxy
 cd voxy
 ./gradlew build
 # Output: build/libs/voxy-*.jar
 ```
 
----
+`./gradlew runClient` starts a dev client. In dev, Iris is loaded from a locally patched copy to work around
+a Fabric Loader dev-environment remapping crash (see `devIrisJar` in `build.gradle`); production is unaffected.
 
 ## Version info
 
 | Property | Value |
 |---|---|
-| Mod version | `0.2.14-alpha` |
+| Voxy | `0.2.16-beta` (upstream `12111`) |
 | Minecraft | `1.21.1` |
-| Fabric Loader | `0.17.2` |
+| Fabric Loader | `0.20.1` |
 | Fabric API | `0.116.6+1.21.1` |
-| Sodium | `0.6.13` |
-| Base commit | `f308c254` (m3t4f1v3/voxy mc_1211) |
-
----
-
-*Original mod by [MCRcortex](https://github.com/MCRcortex). License: All-Rights-Reserved (see LICENSE.md). This port is provided as-is for the community.*
+| Sodium | `0.8.13` |
+| Iris | `1.8.14-beta.1` |
