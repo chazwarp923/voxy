@@ -8,6 +8,7 @@ import me.cortex.voxy.client.core.util.IrisUtil;
 import me.cortex.voxy.common.util.cpu.CpuLayout;
 import me.cortex.voxy.commonImpl.VoxyCommon;
 import net.caffeinemc.mods.sodium.api.config.ConfigEntryPoint;
+import net.caffeinemc.mods.sodium.api.config.ConfigEntryPointForge;
 import net.caffeinemc.mods.sodium.api.config.ConfigState;
 import net.caffeinemc.mods.sodium.api.config.option.OptionFlag;
 import net.caffeinemc.mods.sodium.api.config.option.OptionImpact;
@@ -17,6 +18,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
+//Fabric Sodium finds this via the sodium:config_api_user entrypoint; NeoForge Sodium (e.g. under Sinytra Connector)
+// only discovers entry points through this annotation or a neoforge.mods.toml property
+@ConfigEntryPointForge("voxy")
 public class VoxyConfigMenu implements ConfigEntryPoint {
     @Override
     public void registerConfigLate(ConfigBuilder B) {
