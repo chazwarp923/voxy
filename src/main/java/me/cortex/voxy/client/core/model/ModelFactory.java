@@ -41,6 +41,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.lang.invoke.VarHandle;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static me.cortex.voxy.client.core.model.ModelStore.MODEL_SIZE;
@@ -837,9 +838,18 @@ public class ModelFactory {
             }
         };
         int c = colorProvider.getColor(state, getter, BlockPos.ZERO, 0);
-        if (c!=-1) return c;
-        return colorProvider.getColor(state, getter, BlockPos.ZERO, 1);
+        if (c==-1) c = colorProvider.getColor(state, getter, BlockPos.ZERO, 1);
+        //Some modded providers (e.g. dynamic trees leaves) return pure black when queried outside a real world,
+        // a black tint is never intended so treat it as untinted instead of rendering the lod black
+        if ((c&0xFFFFFF)==0) {
+            if (BLACK_TINT_WARNED.add(state.getBlock())) {
+                Logger.warn("Colour provider for " + state + " returned black, rendering it untinted");
+            }
+            return -1;
+        }
+        return c;
     }
+    private static final Set<Block> BLACK_TINT_WARNED = ConcurrentHashMap.newKeySet();
 
     private static boolean isBiomeDependentColour(BlockColor colorProvider, BlockState state) {
         boolean[] biomeDependent = new boolean[1];
