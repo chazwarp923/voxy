@@ -249,10 +249,7 @@ public class ModelFactory {
                     colour[i] = (int)value;
                     depth[i] = (int) (value>>>32);
                 }
-                if (layer == RenderType.solid()) {
-                    fillTransparentBlack(colour, depth);
-                }
-                textureData[face] =new ColourDepthTextureData(colour, depth, MODEL_TEXTURE_SIZE, MODEL_TEXTURE_SIZE);
+                textureData[face] = new ColourDepthTextureData(colour, depth, MODEL_TEXTURE_SIZE, MODEL_TEXTURE_SIZE);
             }
         }
 
@@ -346,27 +343,6 @@ public class ModelFactory {
             this.texture.free();
             if (this.biomeUpload != null) {
                 this.biomeUpload.free();
-            }
-        }
-    }
-
-    //Solid layer faces are drawn without alpha discard (e.g. leaves are forced solid), so the colour stored under
-    // transparent pixels becomes visible, like fast graphics. Vanilla textures keep a sensible colour there but many
-    // modded ones store pure black (e.g. BWG red maple leaves), turning the LOD near black. Fill those pixels with the
-    // average colour of the face's opaque pixels. Alpha is left untouched so discard and tint detection are unaffected.
-    private static void fillTransparentBlack(int[] colour, int[] depth) {
-        long r = 0, g = 0, b = 0; int count = 0;
-        for (int i = 0; i < colour.length; i++) {
-            int c = colour[i];
-            if ((c>>>24) <= 1 || (depth[i]&0xFF) == 0) continue;//Transparent or not written
-            r += c&0xFF; g += (c>>8)&0xFF; b += (c>>16)&0xFF; count++;
-        }
-        if (count == 0) return;
-        int fill = (int)(r/count) | ((int)(g/count)<<8) | ((int)(b/count)<<16);
-        for (int i = 0; i < colour.length; i++) {
-            int c = colour[i];
-            if ((c>>>24) <= 1 && (c&0xFFFFFF) == 0 && (depth[i]&0xFF) != 0) {
-                colour[i] = (c&0xFF000000) | fill;
             }
         }
     }
