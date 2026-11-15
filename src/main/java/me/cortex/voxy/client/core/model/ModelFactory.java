@@ -614,7 +614,6 @@ public class ModelFactory {
             int biomeIndex = this.modelsRequiringBiomeColours.size() * this.biomes.size();
             MemoryUtil.memPutInt(uploadPtr, biomeIndex);
             this.modelsRequiringBiomeColours.add(new Pair<>(modelId, blockState));
-            this.checkBiomeColourTableSize();
             if (!this.biomes.isEmpty()) {
                 uploadResult.biomeUploadIndex = biomeIndex;
                 long clrUploadPtr = (uploadResult.biomeUpload = new MemoryBuffer(4L * this.biomes.size())).address;
@@ -725,20 +724,6 @@ public class ModelFactory {
         }
     }
 
-    private boolean loggedLargeBiomeTable = false;
-    private boolean loggedBiomeTableOverflow = false;
-    private void checkBiomeColourTableSize() {
-        long entries = (long) this.biomes.size() * this.modelsRequiringBiomeColours.size();
-        if (entries > (1<<16) && !this.loggedLargeBiomeTable) {
-            this.loggedLargeBiomeTable = true;
-            Logger.info("Biome colour table exceeds upstream's 65536 entry limit: " + this.biomes.size() + " biomes * " + this.modelsRequiringBiomeColours.size() + " biome tinted models");
-        }
-        if (entries > ModelStore.MODEL_COLOUR_CAPACITY && !this.loggedBiomeTableOverflow) {
-            this.loggedBiomeTableOverflow = true;
-            Logger.error("Biome colour table overflow (" + entries + " > " + ModelStore.MODEL_COLOUR_CAPACITY + "), some biome tinted lods will render black");
-        }
-    }
-
     private BiomeUploadResult addBiome0(int id, Biome biome) {
         if (biome == null) {
             throw new IllegalStateException("Null biome");
@@ -757,7 +742,6 @@ public class ModelFactory {
         }
 
         if (this.modelsRequiringBiomeColours.isEmpty()) return null;
-        this.checkBiomeColourTableSize();
 
         var result = new BiomeUploadResult(this.biomes.size(), this.modelsRequiringBiomeColours.size());
 
